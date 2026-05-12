@@ -1,14 +1,57 @@
-﻿import { Link } from 'react-router-dom';
+﻿import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AppCard from '../../components/ui/AppCard';
+import apiClient from '../../lib/apiClient';
 
 export default function UserProfilePage() {
+  const [user, setUser] = useState(null);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        const response = await apiClient.get('/user/profile');
+        if (!isMounted) return;
+        setUser(response.data.user || null);
+        setMessage(response.data.message || 'Lấy profile thành công.');
+      } catch (error) {
+        if (!isMounted) return;
+        setMessage(error?.response?.data?.message || 'Không thể tải profile người dùng.');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
-    <AppCard title={'Trang ng\u01B0\u1EDDi d\u00F9ng'}>
-      <p className="text-sm text-slate-700">{'B\u1EA1n \u0111\u00E3 \u0111\u0103ng nh\u1EADp v\u1EDBi t\u00E0i kho\u1EA3n ng\u01B0\u1EDDi d\u00F9ng.'}</p>
+    <AppCard title={'Trang người dùng'}>
+      {loading ? (
+        <p className="text-sm text-slate-700">Đang tải thông tin profile...</p>
+      ) : (
+        <>
+          <p className="text-sm text-slate-700">{message}</p>
+          {user && (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+              <p><span className="font-semibold">Họ tên:</span> {user.fullName}</p>
+              <p><span className="font-semibold">Email:</span> {user.email}</p>
+              <p><span className="font-semibold">Vai trò:</span> {user.role}</p>
+            </div>
+          )}
+        </>
+      )}
+
       <Link to="/auth/login" className="mt-4 inline-block text-sm font-semibold text-sky-700 hover:text-sky-800">
-        {'Quay l\u1EA1i trang \u0111\u0103ng nh\u1EADp'}
+        {'Quay lại trang đăng nhập'}
       </Link>
     </AppCard>
   );
 }
-
